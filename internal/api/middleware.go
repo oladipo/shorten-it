@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Simple API key authentication middleware
+// AuthRequired is a middleware for API key authentication
 func AuthRequired() gin.HandlerFunc {
 	apiKey := os.Getenv("API_KEY")
 	return func(c *gin.Context) {
@@ -26,7 +26,7 @@ func AuthRequired() gin.HandlerFunc {
 	}
 }
 
-// Simple in-memory rate limiter per IP
+// RateLimit is a simple in-memory rate limiter per IP
 var rateLimiters = make(map[string]*rateLimiter)
 var mu sync.Mutex
 

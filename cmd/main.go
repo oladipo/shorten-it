@@ -6,11 +6,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/oladipo/shorten-it/internal/api"
+	"github.com/oladipo/shorten-it/internal/metrics"
 	"github.com/oladipo/shorten-it/internal/storage"
 )
 
 // SetupApp sets up the Gin engine and storage backend
 func SetupApp(storeType string) (*gin.Engine, error) {
+	metrics.Init()
+
 	var store storage.Storage
 
 	switch storeType {
@@ -26,6 +29,9 @@ func SetupApp(storeType string) (*gin.Engine, error) {
 
 	r := gin.Default()
 	api.RegisterRoutes(r, store)
+
+	r.GET("/metrics", gin.WrapH(metrics.Handler()))
+
 	return r, nil
 }
 

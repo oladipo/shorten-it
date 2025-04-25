@@ -9,6 +9,7 @@ import (
 	"github.com/oladipo/shorten-it/internal/geo"
 	"github.com/oladipo/shorten-it/internal/storage"
 	"github.com/oladipo/shorten-it/internal/analytics"
+	"github.com/oladipo/shorten-it/internal/metrics"
 )
 
 // RegisterRoutes registers API routes to the provided Gin router
@@ -42,6 +43,7 @@ func RegisterRoutes(r *gin.Engine, store storage.Storage) {
 			Referrer:  c.Request.Referer(),
 			UserAgent: c.Request.UserAgent(),
 		})
+		metrics.RedirectsTotal.WithLabelValues(shortcode).Inc()
 
 		c.Redirect(http.StatusFound, url)
 	})
@@ -53,6 +55,7 @@ func RegisterRoutes(r *gin.Engine, store storage.Storage) {
 	})
 
 	r.POST("/shorten", AuthRequired(), func(c *gin.Context) {
+		metrics.ShortenRequestsTotal.Inc()
 		// Example: require API key for shortening
 		c.JSON(http.StatusNotImplemented, gin.H{"error": "not implemented"})
 	})

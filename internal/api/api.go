@@ -12,6 +12,8 @@ import (
 
 // RegisterRoutes registers API routes to the provided Gin router
 func RegisterRoutes(r *gin.Engine, store storage.Storage) {
+	r.Use(RateLimit(10)) // 10 requests/minute per IP
+
 	r.GET(":shortcode", func(c *gin.Context) {
 		shortcode := c.Param("shortcode")
 		ctx := c.Request.Context()
@@ -34,5 +36,10 @@ func RegisterRoutes(r *gin.Engine, store storage.Storage) {
 		}
 
 		c.Redirect(http.StatusFound, url)
+	})
+
+	r.POST("/shorten", AuthRequired(), func(c *gin.Context) {
+		// Example: require API key for shortening
+		c.JSON(http.StatusNotImplemented, gin.H{"error": "not implemented"})
 	})
 }

@@ -1,13 +1,14 @@
 package api
 
 import (
-	"log"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oladipo/shorten-it/internal/geo"
 	"github.com/oladipo/shorten-it/internal/storage"
+	"github.com/oladipo/shorten-it/internal/analytics"
 )
 
 // RegisterRoutes registers API routes to the provided Gin router
@@ -23,19 +24,32 @@ func RegisterRoutes(r *gin.Engine, store storage.Storage) {
 			return
 		}
 
-		// Get client IP
 		ip := c.ClientIP()
 		if net.ParseIP(ip) == nil {
-			ip = "8.8.8.8" // fallback for local testing
+			ip = "8.8.8.8"
 		}
 		geoInfo, err := geo.LookupIP(ip)
-		if err != nil {
-			log.Printf("Geo lookup failed for IP %s: %v", ip, err)
-		} else {
-			log.Printf("Redirect from %s: country=%s, city=%s", ip, geoInfo.Country, geoInfo.City)
+		country, city := "", ""
+		if err == nil && geoInfo != nil {
+			country = geoInfo.Country
+			city = geoInfo.City
 		}
+		analytics.Record(shortcode, analytics.Event{
+			Timestamp: time.Now(),
+			IP:        ip,
+			Country:   country,
+			City:      city,
+			Referrer:  c.Request.Referer(),
+			UserAgent: c.Request.UserAgent(),
+		})
 
 		c.Redirect(http.StatusFound, url)
+	})
+
+	r.GET(":shortcode/stats", func(c *gin.Context) {
+		shortcode := c.Param("shortcode")
+		stats := analytics.GetEvents(shortcode)
+		c.JSON(http.StatusOK, stats)
 	})
 
 	r.POST("/shorten", AuthRequired(), func(c *gin.Context) {
